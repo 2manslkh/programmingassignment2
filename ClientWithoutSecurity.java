@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
 
+import sun.security.krb5.internal.crypto.Nonce;
+
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
@@ -18,7 +20,7 @@ public class ClientWithoutSecurity {
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 
-    	String filename = "rr.txt";
+    	String filename = "test.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
@@ -40,6 +42,7 @@ public class ClientWithoutSecurity {
 
 		long timeStarted = System.nanoTime();
 
+
 		try {
 
 			System.out.println("Establishing connection to server...");
@@ -48,6 +51,9 @@ public class ClientWithoutSecurity {
 			clientSocket = new Socket(serverAddress, port);
 			toServer = new DataOutputStream(clientSocket.getOutputStream());
 			fromServer = new DataInputStream(clientSocket.getInputStream());
+
+			//TODO: Send Nonce to server
+			sendNonce(toServer);
 
 			// Read Certificate sent by server
 			readCertificate(fromServer);
@@ -93,6 +99,10 @@ public class ClientWithoutSecurity {
 
 		long timeTaken = System.nanoTime() - timeStarted;
 		System.out.println("Program took: " + timeTaken/1000000.0 + "ms to run");
+	}
+
+	private static void sendNonce(DataOutputStream toServer) throws IOException{
+		toServer.writeInt(Nonce.value());
 	}
 
 	private static void readCertificate(DataInputStream fromServer) throws IOException {

@@ -10,13 +10,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.PrivateKey;
 
 public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
 		System.out.println("Started Server...");
 		String certname = "server.crt";
-		String encryptedMessage = Auth.encryptString("Hello, this is SecStore!");
+		String privatekeyname = "privateServer.der";
+		PrivateKey privateKey = Auth.readPrivateKey(privatekeyname);
+		byte[] encryptedMessage = Auth.encryptString("Hello, this is SecStore!", privateKey);
 		InputStream serverCert = new FileInputStream(certname);
 
 		int numBytes = 0;
@@ -37,6 +40,12 @@ public class ServerWithoutSecurity {
 			connectionSocket = welcomeSocket.accept();
 			fromClient = new DataInputStream(connectionSocket.getInputStream());
 			toClient = new DataOutputStream(connectionSocket.getOutputStream());
+			//TODO: Receive Nonce
+			int nonce = readNonce(fromClient);
+			System.out.println(nonce);
+
+			//TODO: Send encrypted message w/ nonce (encrypted using private key)
+
 
 			//TODO: Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
@@ -83,6 +92,10 @@ public class ServerWithoutSecurity {
 			}
 		} catch (Exception e) {e.printStackTrace();}
 
+	}
+
+	private static int readNonce(DataInputStream fromClient) throws IOException {
+		return fromClient.readInt();
 	}
 
 	public static void sendCertificateToClient(DataOutputStream toClient, String filename) throws IOException {
