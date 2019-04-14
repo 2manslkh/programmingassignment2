@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
 import sun.security.krb5.internal.crypto.Nonce;
@@ -19,6 +20,7 @@ public class ClientWithoutSecurity {
 		// Client Certificate
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
+		PublicKey publicKey = null;
 
     	String filename = "test.txt";
     	if (args.length > 0) filename = args[0];
@@ -53,17 +55,39 @@ public class ClientWithoutSecurity {
 			fromServer = new DataInputStream(clientSocket.getInputStream());
 
 			//TODO: Send Nonce to server
-			sendNonce(toServer);
+			int nonce = Nonce.value();
+			sendNonce(toServer, nonce);
+
+			//TODO: Receive Encrypted Nonce and Message from Server
+			int encyptedmlength = fromServer.readInt();
+//			System.out.println(encyptedmlength);
+			byte[] encryptedm = new byte[encyptedmlength];
+			fromServer.read(encryptedm,0,encyptedmlength);
+
+			int encyptednoncelength = fromServer.readInt();
+//			System.out.println(encyptednoncelength);
+			byte[] encryptedNonce = new byte[encyptednoncelength];
+			fromServer.read(encryptedNonce,0,encyptednoncelength);
 
 			// Read Certificate sent by server
 			readCertificate(fromServer);
-			Thread.sleep(1000);
 
 			// Check if Server is verified
 			if(!Auth.verifiedServer("recv_server.crt")) // always returns true for now
 				System.out.println("Authentication Failed. Closing Connections");
 //				bufferedFileInputStream.close();
 //				fileInputStream.close();
+			else{
+				publicKey = Auth.getPublicKey("recv_server.crt");
+			}
+
+			if(!Auth.verifiedNonce(encryptedNonce,nonce,publicKey)) // always returns true for now
+				System.out.println("Nonce is not correct, Closing Connections");
+//				bufferedFileInputStream.close();
+//				fileInputStream.close();
+			else{
+				System.out.println("Nonce Verified");
+			}
 
 			System.out.println("Sending file...");
 
@@ -101,8 +125,9 @@ public class ClientWithoutSecurity {
 		System.out.println("Program took: " + timeTaken/1000000.0 + "ms to run");
 	}
 
-	private static void sendNonce(DataOutputStream toServer) throws IOException{
-		toServer.writeInt(Nonce.value());
+	private static void sendNonce(DataOutputStream toServer, int nonce) throws IOException{
+		System.out.println("Nonce Sent");
+		toServer.writeInt(nonce);
 	}
 
 	private static void readCertificate(DataInputStream fromServer) throws IOException {
@@ -131,7 +156,6 @@ public class ClientWithoutSecurity {
 
 			packetType = fromServer.readInt();
 			if (packetType == 1) {
-				System.out.println("Inside Cert");
 
 				int numBytes = fromServer.readInt();
 				byte[] block = new byte[numBytes];

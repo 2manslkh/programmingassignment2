@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,10 +37,20 @@ public class Auth {
         servercert.verify(cakey); // throws error if not valid
     }
 
-    public static boolean verifiedServer(String certname){
-
+    public static boolean verifiedServer(String certname) throws FileNotFoundException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        X509Certificate cacert = getX509Certificate(new FileInputStream("cacse.crt"));
+        X509Certificate servercert = getX509Certificate(new FileInputStream(certname));
+        // get public key of cacert
+        PublicKey cakey = cacert.getPublicKey();
+        servercert.checkValidity();
+        servercert.verify(cakey); // throws error if not valid
         return true;
     }
+    public static boolean verifiedNonce(byte[] encryptedNonce, int nonce, PublicKey publicKey) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+        int decryptedNonce = decryptNonce(encryptedNonce,publicKey);
+        return decryptedNonce==nonce;
+    }
+
 
     // Make X509Certificate from .crt file
     public static X509Certificate getX509Certificate(InputStream input) throws CertificateException {
@@ -49,14 +60,35 @@ public class Auth {
     }
 
     public static byte[] encryptString(String input, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        System.out.println("Message Encrypted");
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(input.getBytes());
     }
 
+    public static byte[] encryptNonce(int input, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        System.out.println("Nonce Encrypted");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        ByteBuffer b = ByteBuffer.allocate(4);
+        b.putInt(input);
+        return cipher.doFinal(b.array());
+
+    }
+
+    public static int decryptNonce(byte[] input, PublicKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        System.out.println("Nonce Decrypted");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] inputDecrypted = cipher.doFinal(input);
+        return ByteBuffer.wrap(inputDecrypted).getInt();
+    }
+
+
     // Get Public Key from X509 Certificate
-    public static PublicKey getPublicKey(X509Certificate input){
-        return input.getPublicKey();
+    public static PublicKey getPublicKey(String certname) throws FileNotFoundException, CertificateException {
+        X509Certificate servercert = getX509Certificate(new FileInputStream(certname));
+        return servercert.getPublicKey();
     }
 
     public static PrivateKey readPrivateKey(String filename) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException

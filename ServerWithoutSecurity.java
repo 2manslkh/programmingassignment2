@@ -19,7 +19,7 @@ public class ServerWithoutSecurity {
 		String certname = "server.crt";
 		String privatekeyname = "privateServer.der";
 		PrivateKey privateKey = Auth.readPrivateKey(privatekeyname);
-		byte[] encryptedMessage = Auth.encryptString("Hello, this is SecStore!", privateKey);
+		byte[] encryptedMessage = Auth.encryptString("Hi", privateKey);
 		InputStream serverCert = new FileInputStream(certname);
 
 		int numBytes = 0;
@@ -44,8 +44,16 @@ public class ServerWithoutSecurity {
 			int nonce = readNonce(fromClient);
 			System.out.println(nonce);
 
-			//TODO: Send encrypted message w/ nonce (encrypted using private key)
+			//TODO: Encrypt Nonce
+			byte [] encryptedNonce = Auth.encryptNonce(nonce, privateKey);
 
+			//TODO: Send encrypted message w/ nonce (encrypted using private key)
+			System.out.println(encryptedMessage.length);
+
+			toClient.writeInt(encryptedMessage.length);
+			toClient.write(encryptedMessage);
+			toClient.writeInt(encryptedNonce.length);
+			toClient.write(encryptedNonce);
 
 			//TODO: Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
@@ -95,6 +103,7 @@ public class ServerWithoutSecurity {
 	}
 
 	private static int readNonce(DataInputStream fromClient) throws IOException {
+		System.out.println("Nonce Received");
 		return fromClient.readInt();
 	}
 
