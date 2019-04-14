@@ -1,4 +1,4 @@
-package com.example.lib_probset2;
+
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,6 +21,7 @@ public class Auth {
         PublicKey cakey = cacert.getPublicKey();
         servercert.checkValidity();
         servercert.verify(cakey); // throws error if not valid
+        System.out.println("ASD");// can liao just use eclipse to work
     }
 
     public static boolean verifiedServer(String certname){
