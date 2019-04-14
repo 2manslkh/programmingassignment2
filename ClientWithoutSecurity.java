@@ -9,7 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+
+import sun.security.krb5.internal.crypto.Nonce;
 
 public class ClientWithoutSecurity {
 
@@ -17,8 +20,9 @@ public class ClientWithoutSecurity {
 		// Client Certificate
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
+		PublicKey publicKey = null;
 
-    	String filename = "rr.txt";
+    	String filename = "test.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
@@ -40,6 +44,7 @@ public class ClientWithoutSecurity {
 
 		long timeStarted = System.nanoTime();
 
+
 		try {
 
 			System.out.println("Establishing connection to server...");
@@ -49,38 +54,78 @@ public class ClientWithoutSecurity {
 			toServer = new DataOutputStream(clientSocket.getOutputStream());
 			fromServer = new DataInputStream(clientSocket.getInputStream());
 
+			//Send Nonce to server
+			int nonce = Nonce.value();
+			sendNonce(toServer, nonce);
+
+			//Receive Encrypted Nonce and Message from Server
+			// TODO: Make into a function?
+			int encyptedmlength = fromServer.readInt();
+//			System.out.println(encyptedmlength);
+			byte[] encryptedm = new byte[encyptedmlength];
+			fromServer.read(encryptedm,0,encyptedmlength);
+
+			int encyptednoncelength = fromServer.readInt();
+//			System.out.println(encyptednoncelength);
+			byte[] encryptedNonce = new byte[encyptednoncelength];
+			fromServer.read(encryptedNonce,0,encyptednoncelength);
+
 			// Read Certificate sent by server
 			readCertificate(fromServer);
-			Thread.sleep(1000);
 
 			// Check if Server is verified
 			if(!Auth.verifiedServer("recv_server.crt")) // always returns true for now
 				System.out.println("Authentication Failed. Closing Connections");
 //				bufferedFileInputStream.close();
 //				fileInputStream.close();
+			else{
+				publicKey = Auth.getPublicKey("recv_server.crt"); // extract public key from cert
+			}
+
+			// Check if Nonce is Verifiable
+			if(!Auth.verifiedNonce(encryptedNonce,nonce,publicKey))
+				System.out.println("Nonce is not correct, Closing Connections");
+//				bufferedFileInputStream.close();
+//				fileInputStream.close();
+			else{
+				System.out.println("Nonce Verified");
+			}
 
 			System.out.println("Sending file...");
 
-			// Send the filename
-			toServer.writeInt(0);
-			toServer.writeInt(filename.getBytes().length);
-			toServer.write(filename.getBytes());
-//			toServer.flush();
+			// TODO: CHLOE: Encrypt the file name before sending
+			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
+			// TODO: write the encryption procedure in Auth Class
 
-			// Open the file
+
+			// TODO: Send the encrypted filename
+			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
+			toServer.writeInt(filename.getBytes().length); // tells the server how many bytes we are sending
+
+			byte [] filenameBytes = filename.getBytes();
+			byte [] filenameBytesEncrypted = null;
+			// TODO
+			toServer.write(filenameBytesEncrypted); // sends the file name in byte array
+//			toServer.flush(); // dont need to use just put here first
+
+			// TODO: Open the file
 			fileInputStream = new FileInputStream(filename);
 			bufferedFileInputStream = new BufferedInputStream(fileInputStream);
 
-	        byte [] fromFileBuffer = new byte[117];
+	        byte [] fromFileBuffer = new byte[117]; //holds 117 bytes of data before being transferred
 
 	        // Send the file
-	        for (boolean fileEnded = false; !fileEnded;) {
+	        for (boolean fileEnded = false; !fileEnded;) { // constantly sends chunks of 117 bytes
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
-				fileEnded = numBytes < 117;
+				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
-				toServer.writeInt(1);
-				toServer.writeInt(numBytes);
-				toServer.write(fromFileBuffer);
+				// TODO: Encrypt fromFileBuffer before sending PUBLICKEY (publicKey)
+				// it only matters that we are sending encrypted bytes
+				// we could encrypt the whole file first then send but that will take longer
+
+				toServer.writeInt(1); // Tells the server that we are sending a file
+				toServer.writeInt(numBytes); // Tells the server how many bytes we are sending over
+				toServer.write(fromFileBuffer); // sends the chunk of file
 				toServer.flush();
 			}
 
@@ -93,6 +138,11 @@ public class ClientWithoutSecurity {
 
 		long timeTaken = System.nanoTime() - timeStarted;
 		System.out.println("Program took: " + timeTaken/1000000.0 + "ms to run");
+	}
+
+	private static void sendNonce(DataOutputStream toServer, int nonce) throws IOException{
+		System.out.println("Nonce Sent");
+		toServer.writeInt(nonce);
 	}
 
 	private static void readCertificate(DataInputStream fromServer) throws IOException {
@@ -121,7 +171,6 @@ public class ClientWithoutSecurity {
 
 			packetType = fromServer.readInt();
 			if (packetType == 1) {
-				System.out.println("Inside Cert");
 
 				int numBytes = fromServer.readInt();
 				byte[] block = new byte[numBytes];
