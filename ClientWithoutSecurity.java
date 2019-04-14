@@ -94,7 +94,8 @@ public class ClientWithoutSecurity {
 			System.out.println("Sending file...");
 
 			// TODO: CHLOE: Encrypt the file name before sending
-			// TODO: Encrypt Filename
+			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
+			// TODO: write the encryption procedure in Auth Class
 
 
 			// TODO: Send the encrypted filename
@@ -102,13 +103,10 @@ public class ClientWithoutSecurity {
 			toServer.writeInt(filename.getBytes().length); // tells the server how many bytes we are sending
 
 			byte [] filenameBytes = filename.getBytes();
-
+			byte [] filenameBytesEncrypted = null;
 			// TODO
 			toServer.write(filenameBytesEncrypted); // sends the file name in byte array
 //			toServer.flush(); // dont need to use just put here first
-
-			// TODO: Encrypt the file
-
 
 			// TODO: Open the file
 			fileInputStream = new FileInputStream(filename);
@@ -121,7 +119,9 @@ public class ClientWithoutSecurity {
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
 				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
-				// TODO: Encrypt fromFileBuffer before sending
+				// TODO: Encrypt fromFileBuffer before sending PUBLICKEY (publicKey)
+				// it only matters that we are sending encrypted bytes
+				// we could encrypt the whole file first then send but that will take longer
 
 				toServer.writeInt(1); // Tells the server that we are sending a file
 				toServer.writeInt(numBytes); // Tells the server how many bytes we are sending over

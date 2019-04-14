@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -43,10 +44,10 @@ public class Auth {
         // get public key of cacert
         PublicKey cakey = cacert.getPublicKey();
         servercert.checkValidity();
-        servercert.verify(cakey); // throws error if not valid
+        servercert.verify(cakey); // throws error if not vality
         return true;
     }
-    public static boolean verifiedNonce(byte[] encryptedNonce, int nonce, PublicKey publicKey) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+    public static boolean verifiedNonce(byte[] encryptedNonce, int nonce, Key publicKey) throws IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
         int decryptedNonce = decryptNonce(encryptedNonce,publicKey);
         return decryptedNonce==nonce;
     }
@@ -59,14 +60,14 @@ public class Auth {
         return output;
     }
 
-    public static byte[] encryptString(String input, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public static byte[] encryptString(String input, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         System.out.println("Message Encrypted");
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(input.getBytes());
     }
 
-    public static byte[] encryptNonce(int input, PrivateKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public static byte[] encryptNonce(int input, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         System.out.println("Nonce Encrypted");
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
@@ -76,7 +77,7 @@ public class Auth {
 
     }
 
-    public static int decryptNonce(byte[] input, PublicKey key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+    public static int decryptNonce(byte[] input, Key key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         System.out.println("Nonce Decrypted");
         Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, key);
