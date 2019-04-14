@@ -78,7 +78,7 @@ public class ClientWithoutSecurity {
 //				bufferedFileInputStream.close();
 //				fileInputStream.close();
 			else{
-				publicKey = Auth.getPublicKey("recv_server.crt");
+				publicKey = Auth.getPublicKey("recv_server.crt"); // extract public key from cert
 			}
 
 			if(!Auth.verifiedNonce(encryptedNonce,nonce,publicKey)) // always returns true for now
