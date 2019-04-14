@@ -12,8 +12,6 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-import sun.security.krb5.internal.crypto.Nonce;
-
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
@@ -55,7 +53,7 @@ public class ClientWithoutSecurity {
 			fromServer = new DataInputStream(clientSocket.getInputStream());
 
 			//Send Nonce to server
-			int nonce = Nonce.value();
+			int nonce = Nonce.getInt();
 			sendNonce(toServer, nonce);
 
 			//Receive Encrypted Nonce and Message from Server
