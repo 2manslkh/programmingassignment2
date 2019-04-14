@@ -82,7 +82,9 @@ public class ServerWithoutSecurity {
 					numBytes = fromClient.readInt();
 					byte [] block = new byte[numBytes];
 					fromClient.readFully(block, 0, numBytes);
-
+					// TODO: Decrypt Block here
+					
+					// --- End ---
 					if (numBytes > 0)
 						bufferedFileOutputStream.write(block, 0, numBytes);
 
