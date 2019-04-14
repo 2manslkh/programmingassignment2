@@ -9,8 +9,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import javax.crypto.*;
+import javax.xml.bind.DatatypeConverter;
 
 import sun.security.krb5.internal.crypto.Nonce;
 
@@ -60,6 +69,8 @@ public class ClientWithoutSecurity {
 
 			//Receive Encrypted Nonce and Message from Server
 			// TODO: Make into a function?
+			
+			
 			int encyptedmlength = fromServer.readInt();
 //			System.out.println(encyptedmlength);
 			byte[] encryptedm = new byte[encyptedmlength];
@@ -93,17 +104,26 @@ public class ClientWithoutSecurity {
 
 			System.out.println("Sending file...");
 
-			// TODO: CHLOE: Encrypt the file name before sending
+			///////////////////////////////////////////////////////////////////////////
+
 			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
+			Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, publicKey);
+	        
 			// TODO: write the encryption procedure in Auth Class
 
-
 			// TODO: Send the encrypted filename
+			
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(filename.getBytes().length); // tells the server how many bytes we are sending
 
+			toServer.write(filename.getBytes());
+			toServer.flush();
+			
 			byte [] filenameBytes = filename.getBytes();
 			byte [] filenameBytesEncrypted = null;
+			
+			
 			// TODO
 			toServer.write(filenameBytesEncrypted); // sends the file name in byte array
 //			toServer.flush(); // dont need to use just put here first
