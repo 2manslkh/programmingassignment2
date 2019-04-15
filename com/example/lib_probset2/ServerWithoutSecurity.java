@@ -12,6 +12,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.PrivateKey;
 
+import javax.xml.bind.DatatypeConverter;
+
 public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
@@ -48,8 +50,6 @@ public class ServerWithoutSecurity {
 			byte [] encryptedNonce = Auth.encryptNonce(nonce, privateKey);
 
 			//TODO: Send encrypted message w/ nonce (encrypted using private key)
-			System.out.println(encryptedMessage.length);
-
 			toClient.writeInt(encryptedMessage.length);
 			toClient.write(encryptedMessage);
 			toClient.writeInt(encryptedNonce.length);
@@ -83,22 +83,26 @@ public class ServerWithoutSecurity {
 					bufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
 
 				// If the packet is for transferring a chunk of the file
-				} else if (packetType == 1) {
+				} else if (packetType == 1 || packetType == 2) {
 
 					numBytes = fromClient.readInt();
-					byte [] block = new byte[numBytes];
-					fromClient.readFully(block, 0, numBytes);
+					System.out.println("CLIENT SENT:"+numBytes);
+					byte[] encryptedBlock = new byte[numBytes]; // encrypted block from client
+					fromClient.readFully(encryptedBlock, 0, numBytes);
+					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
 					// TODO: Decrypt Block here
-					
+					byte[] decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
+					int decryptednumBytes = decryptedBlock.length;
+					System.out.println(decryptednumBytes);
+					System.out.println(new String(encryptedBlock));
+					System.out.println(new String(decryptedBlock));
 					//////////////////////////////////////////////////////////////
-					byte[] decryptedBlock = ClientCP1.decrypt(block, privateKey);
-
 					
 					// --- End ---
-					if (numBytes > 0)
-						bufferedFileOutputStream.write(block, 0, numBytes);
 
-					if (numBytes < 117) {
+					bufferedFileOutputStream.write(decryptedBlock, 0, decryptednumBytes);
+
+					if (packetType ==  2) {
 						System.out.println("Closing connection...");
 
 						if (bufferedFileOutputStream != null) bufferedFileOutputStream.close();

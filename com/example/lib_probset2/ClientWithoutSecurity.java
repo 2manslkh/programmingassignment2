@@ -12,6 +12,8 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import javax.xml.bind.DatatypeConverter;
+
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
@@ -20,7 +22,7 @@ public class ClientWithoutSecurity {
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 		PublicKey publicKey = null;
 
-    	String filename = "shorttext.txt";
+    	String filename = "longtext.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
@@ -91,7 +93,7 @@ public class ClientWithoutSecurity {
 				System.out.println("Nonce Verified");
 			}
 
-			System.out.println("Sending file...");
+			System.out.println("Sending filename...");
 
 			///////////////////////////////////////////////////////////////////////////
 
@@ -100,38 +102,45 @@ public class ClientWithoutSecurity {
 	        
 			// TODO: Write the encryption procedure in ClientCP1
 			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
-			
-			//store an encrypted
 
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
 			toServer.write(encryptedFilename);
-//			toServer.flush();
+
+			System.out.println("Encrypted Filename sent:" + encryptedFilename.length + "bytes");
 			
 //			toServer.flush(); // dont need to use just put here first
 
 			// Open the file
 			fileInputStream = new FileInputStream(filename);
 			bufferedFileInputStream = new BufferedInputStream(fileInputStream);
-
-	        byte [] fromFileBuffer = new byte[117]; //holds 117 bytes of data before being transferred
-
+			// Make File Buffers
+	        byte [] fromFileBuffer = new byte[117]; // file buffer for reading
+			byte [] fromFileBufferEncrypted; // byte array to hold encrypted bytes
 	        // Send the file
 	        for (boolean fileEnded = false; !fileEnded;) { // constantly sends chunks of 117 bytes
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
+				System.out.println("Block Contains: " + new String(fromFileBuffer));
 				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
 				// TODO: Encrypt fromFileBuffer before sending PUBLICKEY (publicKey)
 				// it only matters that we are sending encrypted bytes
 				// we could encrypt the whole file first then send but that will take longer
+				fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer,publicKey);
+				int numBytesEncrypted = fromFileBufferEncrypted.length;
+				System.out.println(numBytesEncrypted);
+				System.out.println(fileEnded +" "+numBytes);
+				System.out.println(DatatypeConverter.printBase64Binary(fromFileBufferEncrypted));
 
-				
-				
-				toServer.writeInt(1); // Tells the server that we are sending a file
-				toServer.writeInt(numBytes); // Tells the server how many bytes we are sending over
-				toServer.write(fromFileBuffer); // sends the chunk of file
-				toServer.flush();
+				if (!fileEnded) {
+					toServer.writeInt(1); // Tells the server that we are sending a file
+				}else{
+					toServer.writeInt(2); // Tells the server that we sent the last chunk
+				}
+				toServer.writeInt(numBytesEncrypted); // Tells the server how many bytes we are sending over
+				toServer.write(fromFileBufferEncrypted); // sends the chunk of file
+//				toServer.flush();
 			}
 
 	        bufferedFileInputStream.close();
