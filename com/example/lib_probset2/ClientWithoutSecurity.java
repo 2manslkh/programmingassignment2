@@ -21,7 +21,7 @@ public class ClientWithoutSecurity {
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 		PublicKey publicKey = null;
 
-    	String filename = "test.txt";
+    	String filename = "shorttext.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
@@ -97,23 +97,19 @@ public class ClientWithoutSecurity {
 			///////////////////////////////////////////////////////////////////////////
 
 			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
-			Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, publicKey);
+			byte[] filename_bytes = filename.getBytes();
 	        
 			// TODO: Write the encryption procedure in ClientCP1
-
-
+			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
+			
+			//store an encrypted
 
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
-			toServer.writeInt(filename.getBytes().length); // tells the server how many bytes we are sending
-			toServer.write(filename.getBytes());
+			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
+			toServer.write(encryptedFilename);
 			toServer.flush();
 			
-			byte [] filenameBytes = filename.getBytes();
-			byte [] filenameBytesEncrypted = null;
-
-			toServer.write(filenameBytesEncrypted); // sends the file name in byte array
 //			toServer.flush(); // dont need to use just put here first
 
 			// Open the file
@@ -131,6 +127,8 @@ public class ClientWithoutSecurity {
 				// it only matters that we are sending encrypted bytes
 				// we could encrypt the whole file first then send but that will take longer
 
+				
+				
 				toServer.writeInt(1); // Tells the server that we are sending a file
 				toServer.writeInt(numBytes); // Tells the server how many bytes we are sending over
 				toServer.write(fromFileBuffer); // sends the chunk of file

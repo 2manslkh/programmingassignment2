@@ -72,8 +72,13 @@ public class ServerWithoutSecurity {
 					// Must use read fully!
 					// See: https://stackoverflow.com/questions/25897627/datainputstream-read-vs-datainputstream-readfully
 					fromClient.readFully(filename, 0, numBytes);
-
-					fileOutputStream = new FileOutputStream("recv_"+new String(filename, 0, numBytes));
+					
+					//TODO: Decrypt Filename
+					///////////////////////////////////////////////////////////
+					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
+					
+					
+					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));
 					bufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
 
 				// If the packet is for transferring a chunk of the file
@@ -83,7 +88,11 @@ public class ServerWithoutSecurity {
 					byte [] block = new byte[numBytes];
 					fromClient.readFully(block, 0, numBytes);
 					// TODO: Decrypt Block here
+					
+					//////////////////////////////////////////////////////////////
+					byte[] decryptedBlock = ClientCP1.decrypt(block, privateKey);
 
+					
 					// --- End ---
 					if (numBytes > 0)
 						bufferedFileOutputStream.write(block, 0, numBytes);
