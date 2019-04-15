@@ -76,6 +76,7 @@ public class ServerWithoutSecurity {
 					//TODO: Decrypt Filename
 					///////////////////////////////////////////////////////////
 					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
+					numBytes = decryptedFilename.length;
 					
 					
 					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));

@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import javax.crypto.Cipher;
 
 public class ClientWithoutSecurity {
 
@@ -108,7 +107,7 @@ public class ClientWithoutSecurity {
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
 			toServer.write(encryptedFilename);
-			toServer.flush();
+//			toServer.flush();
 			
 //			toServer.flush(); // dont need to use just put here first
 
