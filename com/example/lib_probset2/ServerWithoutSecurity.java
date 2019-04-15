@@ -42,21 +42,24 @@ public class ServerWithoutSecurity {
 			connectionSocket = welcomeSocket.accept();
 			fromClient = new DataInputStream(connectionSocket.getInputStream());
 			toClient = new DataOutputStream(connectionSocket.getOutputStream());
-			//TODO: Receive Nonce
+
+			// AUTHENTICATION PROTOCOL (START) //
+			// Receive Nonce
 			int nonce = readNonce(fromClient);
 			System.out.println(nonce);
 
-			//TODO: Encrypt Nonce
+			// Encrypt Nonce
 			byte [] encryptedNonce = Auth.encryptNonce(nonce, privateKey);
 
-			//TODO: Send encrypted message w/ nonce (encrypted using private key)
+			// Send encrypted message w/ nonce (encrypted using private key)
 			toClient.writeInt(encryptedMessage.length);
 			toClient.write(encryptedMessage);
 			toClient.writeInt(encryptedNonce.length);
 			toClient.write(encryptedNonce);
 
-			//TODO: Send serverCert to Client upon request (established connection)
+			// Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
+			// AUTHENTICATION PROTOCOL (END) //
 
 			while (!connectionSocket.isClosed()) {
 
@@ -73,11 +76,9 @@ public class ServerWithoutSecurity {
 					// See: https://stackoverflow.com/questions/25897627/datainputstream-read-vs-datainputstream-readfully
 					fromClient.readFully(filename, 0, numBytes);
 					
-					//TODO: Decrypt Filename
-					///////////////////////////////////////////////////////////
+					// Decrypt Filename
 					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
 					numBytes = decryptedFilename.length;
-					
 					
 					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));
 					bufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
@@ -90,7 +91,6 @@ public class ServerWithoutSecurity {
 					byte[] encryptedBlock = new byte[numBytes]; // encrypted block from client
 					fromClient.readFully(encryptedBlock, 0, numBytes);
 					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
-					// TODO: Decrypt Block here
 					byte[] decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
 					int decryptednumBytes = decryptedBlock.length;
 					System.out.println(decryptednumBytes);
@@ -119,18 +119,18 @@ public class ServerWithoutSecurity {
 	}
 
 	private static int readNonce(DataInputStream fromClient) throws IOException {
-		System.out.println("Nonce Received");
+		System.out.println("Server: Nonce Received");
 		return fromClient.readInt();
 	}
 
 	public static void sendCertificateToClient(DataOutputStream toClient, String filename) throws IOException {
 		int numBytes = 0;
 
+		System.out.println("Server: Sending Certificate");
 		// Send the filename
 		toClient.writeInt(0); //packettype
 		toClient.writeInt(filename.getBytes().length); //numbytes
 		toClient.write(filename.getBytes());
-		toClient.flush();
 
 		// Open the file
 		FileInputStream fileInputStream = new FileInputStream(filename);

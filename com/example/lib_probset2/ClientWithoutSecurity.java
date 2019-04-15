@@ -54,29 +54,20 @@ public class ClientWithoutSecurity {
 			toServer = new DataOutputStream(clientSocket.getOutputStream());
 			fromServer = new DataInputStream(clientSocket.getInputStream());
 
+			// AUTHENTICATION PROTOCOL (START) //
 			//Send Nonce to server
 			int nonce = Nonce.getInt();
 			sendNonce(toServer, nonce);
 
 			//Receive Encrypted Nonce and Message from Server
-			// TODO: Make into a function?
-			
-			
-			int encyptedmlength = fromServer.readInt();
-//			System.out.println(encyptedmlength);
-			byte[] encryptedm = new byte[encyptedmlength];
-			fromServer.read(encryptedm,0,encyptedmlength);
-
-			int encyptednoncelength = fromServer.readInt();
-//			System.out.println(encyptednoncelength);
-			byte[] encryptedNonce = new byte[encyptednoncelength];
-			fromServer.read(encryptedNonce,0,encyptednoncelength);
+			byte[] encryptedM = readEncryptedMessage(fromServer);
+			byte[] encryptedNonce = readEncryptedMessage(fromServer);
 
 			// Read Certificate sent by server
-			readCertificate(fromServer);
+			String certname = readCertificate(fromServer);
 
 			// Check if Server is verified
-			if(!Auth.verifiedServer("recv_server.crt")) // always returns true for now
+			if(!Auth.verifiedServer(certname)) // always returns true for now
 				System.out.println("Authentication Failed. Closing Connections");
 //				bufferedFileInputStream.close();
 //				fileInputStream.close();
@@ -90,12 +81,12 @@ public class ClientWithoutSecurity {
 //				bufferedFileInputStream.close();
 //				fileInputStream.close();
 			else{
-				System.out.println("Nonce Verified");
+				System.out.println("Client: Nonce Verified");
 			}
 
-			System.out.println("Sending filename...");
+			// AUTHENTICATION PROTOCOL (END) //
 
-			///////////////////////////////////////////////////////////////////////////
+			System.out.println("Client: Sending filename...");
 
 			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
 			byte[] filename_bytes = filename.getBytes();
@@ -155,57 +146,54 @@ public class ClientWithoutSecurity {
 	}
 
 	private static void sendNonce(DataOutputStream toServer, int nonce) throws IOException{
-		System.out.println("Nonce Sent");
+		System.out.println("Client: Nonce Sent");
 		toServer.writeInt(nonce);
 	}
 
-	private static void readCertificate(DataInputStream fromServer) throws IOException {
+	private static byte[] readEncryptedMessage(DataInputStream fromServer) throws IOException {
+		int length = fromServer.readInt();
+		byte[] m = new byte[length];
+		fromServer.read(m,0,length);
+		return m;
+	}
+
+	private static String readCertificate(DataInputStream fromServer) throws IOException {
 		int packetType = fromServer.readInt();
+		int numBytes = fromServer.readInt();
+		boolean certReceieved = false;
+		byte[] filename = new byte[numBytes];
+		String certname = "";
+
 		BufferedOutputStream bufferedFileOutputStream = null;
 		FileOutputStream fileOutputStream = null;
-		boolean certReceieved = false;
 
-		// If the packet is for transferring the filename
+		System.out.println("Client: Receiving Certificate...");
+
 		while(!certReceieved){
 			if (packetType == 0) {
-
-				System.out.println("Receiving Certificate...");
-
-				int numBytes = fromServer.readInt();
-				byte[] filename = new byte[numBytes];
-				// Must use read fully!
-				// See: https://stackoverflow.com/questions/25897627/datainputstream-read-vs-datainputstream-readfully
 				fromServer.readFully(filename, 0, numBytes);
-
-				fileOutputStream = new FileOutputStream("recv_" + new String(filename, 0, numBytes));
+				certname = "recv_" + new String(filename, 0, numBytes);
+				fileOutputStream = new FileOutputStream(certname);
 				bufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
-
-				// If the packet is for transferring a chunk of the file
 			}
 
 			packetType = fromServer.readInt();
-			if (packetType == 1) {
 
-				int numBytes = fromServer.readInt();
+			if (packetType == 1) {
+				numBytes = fromServer.readInt();
 				byte[] block = new byte[numBytes];
 				fromServer.readFully(block, 0, numBytes);
-
 				if (numBytes > 0)
 					bufferedFileOutputStream.write(block, 0, numBytes);
-
 				if (numBytes < 117) {
-					System.out.println("Closing connection...");
-
 					if (bufferedFileOutputStream != null) bufferedFileOutputStream.close();
 					if (bufferedFileOutputStream != null) fileOutputStream.close();
-//					fromServer.close();
-	//                toClient.close();
-	//                connectionSocket.close();
 					System.out.println("Client: Server Certificate Received.");
 					certReceieved = true;
 				}
 			}
 		}
+		return certname;
 	}
 }
 
