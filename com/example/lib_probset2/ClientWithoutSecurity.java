@@ -9,19 +9,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import javax.crypto.*;
-import javax.xml.bind.DatatypeConverter;
-
-import sun.security.krb5.internal.crypto.Nonce;
+import javax.crypto.Cipher;
 
 public class ClientWithoutSecurity {
 
@@ -64,7 +54,7 @@ public class ClientWithoutSecurity {
 			fromServer = new DataInputStream(clientSocket.getInputStream());
 
 			//Send Nonce to server
-			int nonce = Nonce.value();
+			int nonce = Nonce.getInt();
 			sendNonce(toServer, nonce);
 
 			//Receive Encrypted Nonce and Message from Server
@@ -110,25 +100,23 @@ public class ClientWithoutSecurity {
 			Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, publicKey);
 	        
-			// TODO: write the encryption procedure in Auth Class
+			// TODO: Write the encryption procedure in ClientCP1
 
-			// TODO: Send the encrypted filename
-			
+
+
+			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(filename.getBytes().length); // tells the server how many bytes we are sending
-
 			toServer.write(filename.getBytes());
 			toServer.flush();
 			
 			byte [] filenameBytes = filename.getBytes();
 			byte [] filenameBytesEncrypted = null;
-			
-			
-			// TODO
+
 			toServer.write(filenameBytesEncrypted); // sends the file name in byte array
 //			toServer.flush(); // dont need to use just put here first
 
-			// TODO: Open the file
+			// Open the file
 			fileInputStream = new FileInputStream(filename);
 			bufferedFileInputStream = new BufferedInputStream(fileInputStream);
 
