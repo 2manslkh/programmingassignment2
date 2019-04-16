@@ -12,8 +12,6 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-import javax.xml.bind.DatatypeConverter;
-
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
@@ -88,15 +86,18 @@ public class ClientWithoutSecurity {
 
 			System.out.println("Client: Sending filename...");
 
-			// TODO: Encrypt Filename USING PUBLICKEY (publicKey)
+			// CP1: Encrypt Filename using Public Key
 			byte[] filename_bytes = filename.getBytes();
-	        
-			// TODO: Write the encryption procedure in ClientCP1
 			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
-			
-			//////////////////////////////////////////////////////////////////////////
-			//Write encryption procedure in ClientCP2 
-			//NEED TO SEND SESSION KEY TO SERVER, BUT WHAT ABOUT THE NONCE?
+
+			// TODO:CP2: Generate Sesssion Key
+
+			// TODO:CP2: Encrypt Session Key
+
+			// TODO:CP2: Encrypt Filename using Session Key
+
+			// TODO:CP2: Send Session Key
+
 			byte[] encryptedFilenamewithCP2 = ClientCP2.encryptSessionKey(filename_bytes, publicKey);
 
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
@@ -105,8 +106,6 @@ public class ClientWithoutSecurity {
 			toServer.write(encryptedFilename);
 
 			System.out.println("Encrypted Filename sent:" + encryptedFilename.length + "bytes");
-			
-//			toServer.flush(); // dont need to use just put here first
 
 			// Open the file
 			fileInputStream = new FileInputStream(filename);
@@ -120,20 +119,18 @@ public class ClientWithoutSecurity {
 				System.out.println("Block Contains: " + new String(fromFileBuffer));
 				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
-				// TODO: Encrypt fromFileBuffer before sending PUBLICKEY (publicKey)
-				// it only matters that we are sending encrypted bytes
-				// we could encrypt the whole file first then send but that will take longer
+				// CP1: Encrypt File Blocks using Public Key
 				fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer,publicKey);
-				int numBytesEncrypted = fromFileBufferEncrypted.length;
-				System.out.println(numBytesEncrypted);
-				System.out.println(fileEnded +" "+numBytes);
-				System.out.println(DatatypeConverter.printBase64Binary(fromFileBufferEncrypted));
+
+				// TODO:CP2: Encrypt File Blocks using Session Key
+				//
 
 				if (!fileEnded) {
 					toServer.writeInt(1); // Tells the server that we are sending a file
 				}else{
 					toServer.writeInt(2); // Tells the server that we sent the last chunk
 				}
+				int numBytesEncrypted = fromFileBufferEncrypted.length;
 				toServer.writeInt(numBytesEncrypted); // Tells the server how many bytes we are sending over
 				toServer.write(fromFileBufferEncrypted); // sends the chunk of file
 //				toServer.flush();

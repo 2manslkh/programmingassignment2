@@ -15,6 +15,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
 //This! protocol! uses!
@@ -35,38 +36,40 @@ public class ClientCP2 {
 		System.out.println("Number of bytes (unencrypted): " + unencryptedBytes.length);
 		System.out.println("Number of bytes (encrypted): " + encryptedBytes.length);
 		System.out.println("Encrypted Base64 String: " + DatatypeConverter.printBase64Binary(encryptedBytes));
-		byte[] decryptedBytes = decryptSessionKey(encryptedBytes,privateKey);
+		byte[] decryptedBytes = ClientCP1.decrypt(encryptedBytes,privateKey);
 
 		System.out.println("Number of bytes (decrypted): " + decryptedBytes.length);
 		System.out.println("Decrypted String: " + new String(decryptedBytes));
-		
-	
+
 	}
 
-	public static byte[] encryptSessionKey(byte[] unencrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
-		
-		//after client establish connection with the server
-		//server 
-		
-		//init cipher 
+	public static byte[] generateSessionKey() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
 		SecretKey sessionKey = KeyGenerator.getInstance("AES").generateKey();
-		Cipher sessionCipher = Cipher.getInstance("AES/ECD/PKCS5Padding");
-		sessionCipher.init(Cipher.ENCRYPT_MODE, sessionKey);
-	
-		//encrypt session key 
-		byte[] encryptedsessionKey = sessionCipher.doFinal(unencrypted);
-		
-		//convert AES session key to bytes
-		byte[] secretkeyByte = key.getEncoded();
-		
-		//encrypt fileName 
-		return sessionCipher.doFinal(unencrypted);
+		return sessionKey.getEncoded();
 	}
-	public static byte[] decryptSessionKey(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
-		SecretKey sessionKey = KeyGenerator.getInstance("AES").generateKey();
-		Cipher decryptsessionCipher = Cipher.getInstance("AES/ECD/PKCS5Padding");
-		decryptsessionCipher.init(Cipher.DECRYPT_MODE, sessionKey);
-		return decryptsessionCipher.doFinal(encrypted);
+
+	public static byte[] encryptSessionKey(byte[] unencryptedSessionKey, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
+		byte[] encryptedSessionKey = ClientCP1.encrypt(unencryptedSessionKey, key);
+		return encryptedSessionKey;
+	}
+
+	public static SecretKey decryptSessionKey(byte[] encryptedSessionKey, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
+		byte[] decryptedSessionKey = ClientCP1.decrypt(encryptedSessionKey,key); //decrypt session key with Private Key (Server)
+		SecretKey sessionKey = new SecretKeySpec(decryptedSessionKey, 0, decryptedSessionKey.length, "AES");
+		return sessionKey;
+	}
+
+	public static byte[] encrypt(byte[] unencrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
+		Cipher rsaCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding"); // SessionKey AES Encryption
+		rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, key);
+		return rsaCipherEncrypt.doFinal(unencrypted);
+
+	}
+
+	public static byte[] decrypt(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
+		Cipher rsaCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding"); // SessionKey AES Decryption
+		rsaCipherDecrypt.init(Cipher.DECRYPT_MODE, key);
+		return rsaCipherDecrypt.doFinal(encrypted);
 	}
 
 }
