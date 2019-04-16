@@ -35,7 +35,7 @@ public class ClientCP2 {
 		System.out.println("Number of bytes (unencrypted): " + unencryptedBytes.length);
 		System.out.println("Number of bytes (encrypted): " + encryptedBytes.length);
 		System.out.println("Encrypted Base64 String: " + DatatypeConverter.printBase64Binary(encryptedBytes));
-		byte[] decryptedBytes = decrypt(encryptedBytes,privateKey);
+		byte[] decryptedBytes = decryptSessionKey(encryptedBytes,privateKey);
 
 		System.out.println("Number of bytes (decrypted): " + decryptedBytes.length);
 		System.out.println("Decrypted String: " + new String(decryptedBytes));
@@ -46,6 +46,7 @@ public class ClientCP2 {
 	public static byte[] encryptSessionKey(byte[] unencrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
 		
 		//after client establish connection with the server
+		//server 
 		
 		//init cipher 
 		SecretKey sessionKey = KeyGenerator.getInstance("AES").generateKey();
@@ -59,12 +60,13 @@ public class ClientCP2 {
 		byte[] secretkeyByte = key.getEncoded();
 		
 		//encrypt fileName 
-		
-				
+		return sessionCipher.doFinal(unencrypted);
 	}
-	public static byte[] decrypt(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
-		Cipher rsaCipherDecrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-		rsaCipherDecrypt.init(Cipher.DECRYPT_MODE, key);
-		return rsaCipherDecrypt.doFinal(encrypted);
+	public static byte[] decryptSessionKey(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
+		SecretKey sessionKey = KeyGenerator.getInstance("AES").generateKey();
+		Cipher decryptsessionCipher = Cipher.getInstance("AES/ECD/PKCS5Padding");
+		decryptsessionCipher.init(Cipher.DECRYPT_MODE, sessionKey);
+		return decryptsessionCipher.doFinal(encrypted);
 	}
+
 }

@@ -96,6 +96,7 @@ public class ClientWithoutSecurity {
 			
 			//////////////////////////////////////////////////////////////////////////
 			//Write encryption procedure in ClientCP2 
+			//NEED TO SEND SESSION KEY TO SERVER, BUT WHAT ABOUT THE NONCE?
 			byte[] encryptedFilenamewithCP2 = ClientCP2.encryptSessionKey(filename_bytes, publicKey);
 
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
