@@ -12,6 +12,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.PrivateKey;
 
+import javax.xml.bind.DatatypeConverter;
+
 public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
@@ -40,23 +42,24 @@ public class ServerWithoutSecurity {
 			connectionSocket = welcomeSocket.accept();
 			fromClient = new DataInputStream(connectionSocket.getInputStream());
 			toClient = new DataOutputStream(connectionSocket.getOutputStream());
-			//TODO: Receive Nonce
+
+			// AUTHENTICATION PROTOCOL (START) //
+			// Receive Nonce
 			int nonce = readNonce(fromClient);
 			System.out.println(nonce);
 
-			//TODO: Encrypt Nonce
+			// Encrypt Nonce
 			byte [] encryptedNonce = Auth.encryptNonce(nonce, privateKey);
 
-			//TODO: Send encrypted message w/ nonce (encrypted using private key)
-			System.out.println(encryptedMessage.length);
-
+			// Send encrypted message w/ nonce (encrypted using private key)
 			toClient.writeInt(encryptedMessage.length);
 			toClient.write(encryptedMessage);
 			toClient.writeInt(encryptedNonce.length);
 			toClient.write(encryptedNonce);
 
-			//TODO: Send serverCert to Client upon request (established connection)
+			// Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
+			// AUTHENTICATION PROTOCOL (END) //
 
 			while (!connectionSocket.isClosed()) {
 
@@ -72,23 +75,34 @@ public class ServerWithoutSecurity {
 					// Must use read fully!
 					// See: https://stackoverflow.com/questions/25897627/datainputstream-read-vs-datainputstream-readfully
 					fromClient.readFully(filename, 0, numBytes);
-
-					fileOutputStream = new FileOutputStream("recv_"+new String(filename, 0, numBytes));
+					
+					// Decrypt Filename
+					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
+					numBytes = decryptedFilename.length;
+					
+					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));
 					bufferedFileOutputStream = new BufferedOutputStream(fileOutputStream);
 
 				// If the packet is for transferring a chunk of the file
-				} else if (packetType == 1) {
+				} else if (packetType == 1 || packetType == 2) {
 
 					numBytes = fromClient.readInt();
-					byte [] block = new byte[numBytes];
-					fromClient.readFully(block, 0, numBytes);
-					// TODO: Decrypt Block here
-
+					System.out.println("CLIENT SENT:"+numBytes);
+					byte[] encryptedBlock = new byte[numBytes]; // encrypted block from client
+					fromClient.readFully(encryptedBlock, 0, numBytes);
+					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
+					byte[] decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
+					int decryptednumBytes = decryptedBlock.length;
+					System.out.println(decryptednumBytes);
+					System.out.println(new String(encryptedBlock));
+					System.out.println(new String(decryptedBlock));
+					//////////////////////////////////////////////////////////////
+					
 					// --- End ---
-					if (numBytes > 0)
-						bufferedFileOutputStream.write(block, 0, numBytes);
 
-					if (numBytes < 117) {
+					bufferedFileOutputStream.write(decryptedBlock, 0, decryptednumBytes);
+
+					if (packetType ==  2) {
 						System.out.println("Closing connection...");
 
 						if (bufferedFileOutputStream != null) bufferedFileOutputStream.close();
@@ -105,18 +119,18 @@ public class ServerWithoutSecurity {
 	}
 
 	private static int readNonce(DataInputStream fromClient) throws IOException {
-		System.out.println("Nonce Received");
+		System.out.println("Server: Nonce Received");
 		return fromClient.readInt();
 	}
 
 	public static void sendCertificateToClient(DataOutputStream toClient, String filename) throws IOException {
 		int numBytes = 0;
 
+		System.out.println("Server: Sending Certificate");
 		// Send the filename
 		toClient.writeInt(0); //packettype
 		toClient.writeInt(filename.getBytes().length); //numbytes
 		toClient.write(filename.getBytes());
-		toClient.flush();
 
 		// Open the file
 		FileInputStream fileInputStream = new FileInputStream(filename);

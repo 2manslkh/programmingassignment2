@@ -10,5 +10,4 @@ public class Nonce {
         Random random = new Random();
         return Math.abs(random.nextInt());
     }
-
 }
