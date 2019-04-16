@@ -93,6 +93,10 @@ public class ClientWithoutSecurity {
 	        
 			// TODO: Write the encryption procedure in ClientCP1
 			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
+			
+			//////////////////////////////////////////////////////////////////////////
+			//Write encryption procedure in ClientCP2 
+			byte[] encryptedFilenamewithCP2 = ClientCP2.encryptSessionKey(filename_bytes, publicKey);
 
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
