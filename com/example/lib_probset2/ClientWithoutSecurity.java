@@ -12,6 +12,10 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
@@ -90,7 +94,12 @@ public class ClientWithoutSecurity {
 			byte[] filename_bytes = filename.getBytes();
 			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
 
-			// TODO:CP2: Generate Sesssion Key
+			// TODO:CP2: Generate Session Key
+			SecretKey key = KeyGenerator.getInstance("AES").generateKey();
+			
+			//create cipher object, initializing ciphers with the given key, encryption mode = AES
+			Cipher encryptCipher = Cipher.getInstance("AES");
+			encryptCipher.init(Cipher.ENCRYPT_MODE, key);
 
 			// TODO:CP2: Encrypt Session Key
 
