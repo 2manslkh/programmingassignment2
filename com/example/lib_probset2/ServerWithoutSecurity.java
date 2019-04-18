@@ -12,6 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.PrivateKey;
 
+import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
 
 public class ServerWithoutSecurity {
@@ -62,10 +63,10 @@ public class ServerWithoutSecurity {
 //************************ AUTHENTICATION PROTOCOL (END) **********************************88//
 
 			// TODO: CP2: Receive Session Key
-			
 
 			// TODO: CP2: Decrypt Session Key
-
+			
+			//while loop is to receive file in bytes 
 			while (!connectionSocket.isClosed()) {
 
 				int packetType = fromClient.readInt();
@@ -85,6 +86,8 @@ public class ServerWithoutSecurity {
 					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
 
 					// TODO:CP2: Decrypt Filename using Session Key
+					SecretKey decryptFilenameCP2 = ClientCP2.decryptSessionKey(filename, privateKey);
+					
 					numBytes = decryptedFilename.length;
 					
 					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));
@@ -104,6 +107,8 @@ public class ServerWithoutSecurity {
 					int decryptednumBytes = decryptedBlock.length;
 
 					// TODO:CP2: Decrypt File Blocks using Session Key
+					byte[] decryptedBlockCP2 = ClientCP2.decrypt(encryptedBlock, privateKey);
+					//bufferedFileOutputStream.write(decryptedBlockCP2, 0, decryptednumBytes);
 
 					bufferedFileOutputStream.write(decryptedBlock, 0, decryptednumBytes);
 

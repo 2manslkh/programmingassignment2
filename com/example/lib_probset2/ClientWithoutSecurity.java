@@ -102,14 +102,16 @@ public class ClientWithoutSecurity {
 			encryptCipher.init(Cipher.ENCRYPT_MODE, key);
 
 			// TODO:CP2: Encrypt Session Key
-			byte[] encryptedbytes = encryptCipher.doFinal();
+			byte[] encryptedbytesKs = encryptCipher.doFinal();
 
 			// TODO:CP2: Encrypt Filename using Session Key
-
-			// TODO:CP2: Send Session Key
-
 			byte[] encryptedFilenamewithCP2 = ClientCP2.encryptSessionKey(filename_bytes, publicKey);
 
+			// TODO:CP2: Send Session Key
+			toServer.writeInt(0);
+			toServer.writeInt(encryptedbytesKs.length);
+			toServer.write(encryptedFilenamewithCP2);
+			
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
@@ -123,6 +125,7 @@ public class ClientWithoutSecurity {
 			// Make File Buffers
 	        byte [] fromFileBuffer = new byte[117]; // file buffer for reading
 			byte [] fromFileBufferEncrypted; // byte array to hold encrypted bytes
+			byte[] fromFileBufferEncryptedKs;
 	        // Send the file
 	        for (boolean fileEnded = false; !fileEnded;) { // constantly sends chunks of 117 bytes
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
@@ -133,9 +136,9 @@ public class ClientWithoutSecurity {
 				fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer,publicKey);
 
 				// TODO:CP2: Encrypt File Blocks using Session Key
-				// ClientCP2.encrypt(fromFileBuffer, key);
+				fromFileBufferEncryptedKs = ClientCP2.encryptSessionKey(fromFileBuffer, key);
 
-				if (!fileEnded) {
+				if (!fileEnded) {  
 					toServer.writeInt(1); // Tells the server that we are sending a file
 				}else{
 					toServer.writeInt(2); // Tells the server that we sent the last chunk
