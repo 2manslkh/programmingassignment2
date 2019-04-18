@@ -102,6 +102,7 @@ public class ClientWithoutSecurity {
 			encryptCipher.init(Cipher.ENCRYPT_MODE, key);
 
 			// TODO:CP2: Encrypt Session Key
+			byte[] encryptedbytes = encryptCipher.doFinal();
 
 			// TODO:CP2: Encrypt Filename using Session Key
 
@@ -132,7 +133,7 @@ public class ClientWithoutSecurity {
 				fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer,publicKey);
 
 				// TODO:CP2: Encrypt File Blocks using Session Key
-				//
+				// ClientCP2.encrypt(fromFileBuffer, key);
 
 				if (!fileEnded) {
 					toServer.writeInt(1); // Tells the server that we are sending a file

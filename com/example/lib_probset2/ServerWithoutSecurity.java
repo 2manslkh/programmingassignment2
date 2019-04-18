@@ -59,9 +59,10 @@ public class ServerWithoutSecurity {
 
 			// Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
-			// AUTHENTICATION PROTOCOL (END) //
+//************************ AUTHENTICATION PROTOCOL (END) **********************************88//
 
 			// TODO: CP2: Receive Session Key
+			
 
 			// TODO: CP2: Decrypt Session Key
 
