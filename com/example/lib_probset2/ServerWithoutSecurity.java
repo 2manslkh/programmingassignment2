@@ -12,15 +12,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.PrivateKey;
 
+import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
 
 public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
+
+		int CPMODE = 2;
 		System.out.println("Started Server...");
 		String certname = "server.crt";
 		String privatekeyname = "privateServer.der";
 		PrivateKey privateKey = Auth.readPrivateKey(privatekeyname);
+		SecretKey sessionKey = null;
 		byte[] encryptedMessage = Auth.encryptString("Hi", privateKey);
 		InputStream serverCert = new FileInputStream(certname);
 
@@ -59,8 +63,18 @@ public class ServerWithoutSecurity {
 
 			// Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
-			// AUTHENTICATION PROTOCOL (END) //
+//************************ AUTHENTICATION PROTOCOL (END) **********************************88//
+            if (CPMODE == 2) {
+                // TODO: CP2: Receive Session Key
+                int encryptedKsBytesLength = fromClient.readInt();
+                byte[] encryptedKsBytes = new byte[encryptedKsBytesLength];
+                fromClient.readFully(encryptedKsBytes, 0, encryptedKsBytesLength);
 
+                // TODO: CP2: Decrypt Session Key
+                sessionKey = ClientCP2.decryptSessionKey(encryptedKsBytes, privateKey);
+            }
+			byte[] decryptedFilename = null;
+			//while loop is to receive file in bytes 
 			while (!connectionSocket.isClosed()) {
 
 				int packetType = fromClient.readInt();
@@ -75,9 +89,15 @@ public class ServerWithoutSecurity {
 					// Must use read fully!
 					// See: https://stackoverflow.com/questions/25897627/datainputstream-read-vs-datainputstream-readfully
 					fromClient.readFully(filename, 0, numBytes);
-					
-					// Decrypt Filename
-					byte[] decryptedFilename = ClientCP1.decrypt(filename, privateKey);
+
+					if (CPMODE == 1) {
+						// CP1: Decrypt Filename using Private Key
+						decryptedFilename = ClientCP1.decrypt(filename, privateKey);
+					} else if (CPMODE == 2) {
+						// TODO:CP2: Decrypt Filename using Session Key
+						decryptedFilename = ClientCP2.decrypt(filename, sessionKey);
+					}
+
 					numBytes = decryptedFilename.length;
 					
 					fileOutputStream = new FileOutputStream("recv_"+new String(decryptedFilename, 0, numBytes));
@@ -89,16 +109,20 @@ public class ServerWithoutSecurity {
 					numBytes = fromClient.readInt();
 					System.out.println("CLIENT SENT:"+numBytes);
 					byte[] encryptedBlock = new byte[numBytes]; // encrypted block from client
+					byte[] decryptedBlock = null;
+					int decryptednumBytes = 0;
 					fromClient.readFully(encryptedBlock, 0, numBytes);
 					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
-					byte[] decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
-					int decryptednumBytes = decryptedBlock.length;
-					System.out.println(decryptednumBytes);
-					System.out.println(new String(encryptedBlock));
-					System.out.println(new String(decryptedBlock));
-					//////////////////////////////////////////////////////////////
-					
-					// --- End ---
+
+					// CP1: Decrypt File Blocks using Private Key
+					if (CPMODE == 1) {
+						decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
+						decryptednumBytes = decryptedBlock.length;
+					} else if (CPMODE == 2) {
+						// TODO:CP2: Decrypt File Blocks using Session Key
+						decryptedBlock = ClientCP2.decrypt(encryptedBlock, sessionKey);
+						decryptednumBytes = decryptedBlock.length;
+					}
 
 					bufferedFileOutputStream.write(decryptedBlock, 0, decryptednumBytes);
 
