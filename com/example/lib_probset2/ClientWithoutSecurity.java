@@ -12,22 +12,22 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
 		// Client Certificate
+		int CPMODE = 1;
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 		PublicKey publicKey = null;
+		SecretKey sessionKey = null;
 
     	String filename = "longtext.txt";
     	if (args.length > 0) filename = args[0];
 
-    	String serverAddress = "localhost";
+    	String serverAddress = "10.12.154.107";
     	if (args.length > 1) filename = args[1];
 
     	int port = 4321;
@@ -90,28 +90,26 @@ public class ClientWithoutSecurity {
 
 			System.out.println("Client: Sending filename...");
 
-			// CP1: Encrypt Filename using Public Key
 			byte[] filename_bytes = filename.getBytes();
-			byte[] encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
+			byte[] encryptedFilename = new byte[128];
+			if (CPMODE == 1) {
+				// CP1: Encrypt Filename using Public Key
+				encryptedFilename = ClientCP1.encrypt(filename_bytes, publicKey);
+			} else if (CPMODE == 2) {
+				// TODO:CP2: Generate Session Key
+				sessionKey = ClientCP2.generateSessionKey();
+				byte[] sessionKeyBytes = sessionKey.getEncoded();
+				// TODO:CP2: Encrypt Session Key
+				byte[] encryptedbytesKs = ClientCP2.encryptSessionKey(sessionKeyBytes, publicKey);
 
-			// TODO:CP2: Generate Session Key
-			SecretKey key = KeyGenerator.getInstance("AES").generateKey();
-			
-			//create cipher object, initializing ciphers with the given key, encryption mode = AES
-			Cipher encryptCipher = Cipher.getInstance("AES");
-			encryptCipher.init(Cipher.ENCRYPT_MODE, key);
+				// TODO:CP2: Encrypt Filename using Session Key
+				encryptedFilename = ClientCP2.encrypt(filename_bytes, sessionKey);
 
-			// TODO:CP2: Encrypt Session Key
-			byte[] encryptedbytesKs = encryptCipher.doFinal();
+				// TODO:CP2: Send Encrypted Session Key
+				toServer.writeInt(encryptedbytesKs.length);
+				toServer.write(encryptedbytesKs);
+			}
 
-			// TODO:CP2: Encrypt Filename using Session Key
-			byte[] encryptedFilenamewithCP2 = ClientCP2.encryptSessionKey(filename_bytes, publicKey);
-
-			// TODO:CP2: Send Session Key
-			toServer.writeInt(0);
-			toServer.writeInt(encryptedbytesKs.length);
-			toServer.write(encryptedFilenamewithCP2);
-			
 			// Send the encrypted filename (filename should be changed to encryptedfilename)
 			toServer.writeInt(0); // this is just to tell the server that we are sending a filename next
 			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
@@ -123,20 +121,21 @@ public class ClientWithoutSecurity {
 			fileInputStream = new FileInputStream(filename);
 			bufferedFileInputStream = new BufferedInputStream(fileInputStream);
 			// Make File Buffers
-	        byte [] fromFileBuffer = new byte[117]; // file buffer for reading
-			byte [] fromFileBufferEncrypted; // byte array to hold encrypted bytes
-			byte[] fromFileBufferEncryptedKs;
+	        byte[] fromFileBuffer = new byte[117]; // file buffer for reading
+			byte[] fromFileBufferEncrypted = null; // byte array to hold encrypted bytes
 	        // Send the file
 	        for (boolean fileEnded = false; !fileEnded;) { // constantly sends chunks of 117 bytes
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
 				System.out.println("Block Contains: " + new String(fromFileBuffer));
 				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
-				// CP1: Encrypt File Blocks using Public Key
-				fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer,publicKey);
-
-				// TODO:CP2: Encrypt File Blocks using Session Key
-				fromFileBufferEncryptedKs = ClientCP2.encryptSessionKey(fromFileBuffer, key);
+				if (CPMODE == 1) {
+					// CP1: Encrypt File Blocks using Public Key
+					fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer, publicKey);
+				}else if (CPMODE == 2) {
+					// TODO:CP2: Encrypt File Blocks using Session Key
+					fromFileBufferEncrypted = ClientCP2.encryptSessionKey(fromFileBuffer, sessionKey);
+				}
 
 				if (!fileEnded) {  
 					toServer.writeInt(1); // Tells the server that we are sending a file
@@ -146,7 +145,6 @@ public class ClientWithoutSecurity {
 				int numBytesEncrypted = fromFileBufferEncrypted.length;
 				toServer.writeInt(numBytesEncrypted); // Tells the server how many bytes we are sending over
 				toServer.write(fromFileBufferEncrypted); // sends the chunk of file
-//				toServer.flush();
 			}
 
 	        bufferedFileInputStream.close();

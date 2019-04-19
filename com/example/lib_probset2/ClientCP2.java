@@ -43,9 +43,8 @@ public class ClientCP2 {
 
 	}
 
-	public static byte[] generateSessionKey() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		SecretKey sessionKey = KeyGenerator.getInstance("AES").generateKey();
-		return sessionKey.getEncoded();
+	public static SecretKey generateSessionKey() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+		return KeyGenerator.getInstance("AES").generateKey();
 	}
 
 	public static byte[] encryptSessionKey(byte[] unencryptedSessionKey, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
