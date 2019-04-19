@@ -19,7 +19,7 @@ public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
 
-		int CPMODE = 1;
+		int CPMODE = 2;
 		System.out.println("Started Server...");
 		String certname = "server.crt";
 		String privatekeyname = "privateServer.der";

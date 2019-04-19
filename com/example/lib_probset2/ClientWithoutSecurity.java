@@ -18,7 +18,7 @@ public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
 		// Client Certificate
-		int CPMODE = 1;
+		int CPMODE = 2;
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 		PublicKey publicKey = null;
@@ -134,7 +134,7 @@ public class ClientWithoutSecurity {
 					fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer, publicKey);
 				}else if (CPMODE == 2) {
 					// TODO:CP2: Encrypt File Blocks using Session Key
-					fromFileBufferEncrypted = ClientCP2.encryptSessionKey(fromFileBuffer, sessionKey);
+					fromFileBufferEncrypted = ClientCP2.encrypt(fromFileBuffer, sessionKey);
 				}
 
 				if (!fileEnded) {  

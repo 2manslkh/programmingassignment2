@@ -59,16 +59,15 @@ public class ClientCP2 {
 	}
 
 	public static byte[] encrypt(byte[] unencrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
-		Cipher rsaCipherEncrypt = Cipher.getInstance("AES/CBC/PKCS5Padding"); // SessionKey AES Encryption
+		Cipher rsaCipherEncrypt = Cipher.getInstance("AES/ECB/PKCS5Padding"); // SessionKey AES Encryption
 		rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, key);
 		return rsaCipherEncrypt.doFinal(unencrypted);
 
 	}
 
-	public static byte[] decrypt(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException{
-		Cipher rsaCipherDecrypt = Cipher.getInstance("AES/CBC/PKCS5Padding"); // SessionKey AES Decryption
+	public static byte[] decrypt(byte[] encrypted, Key key) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+		Cipher rsaCipherDecrypt = Cipher.getInstance("AES/ECB/PKCS5Padding"); // SessionKey AES Decryption
 		rsaCipherDecrypt.init(Cipher.DECRYPT_MODE, key);
 		return rsaCipherDecrypt.doFinal(encrypted);
 	}
-
 }
