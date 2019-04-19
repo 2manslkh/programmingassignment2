@@ -64,15 +64,15 @@ public class ServerWithoutSecurity {
 			// Send serverCert to Client upon request (established connection)
 			sendCertificateToClient(toClient,certname);
 //************************ AUTHENTICATION PROTOCOL (END) **********************************88//
+            if (CPMODE == 2) {
+                // TODO: CP2: Receive Session Key
+                int encryptedKsBytesLength = fromClient.readInt();
+                byte[] encryptedKsBytes = new byte[encryptedKsBytesLength];
+                fromClient.readFully(encryptedKsBytes, 0, encryptedKsBytesLength);
 
-			// TODO: CP2: Receive Session Key
-			int encryptedKsBytesLength = fromClient.readInt();
-			byte [] encryptedKsBytes = new byte[encryptedKsBytesLength];
-			fromClient.readFully(encryptedKsBytes,0,encryptedKsBytesLength);
-
-			// TODO: CP2: Decrypt Session Key
-			sessionKey = ClientCP2.decryptSessionKey(encryptedKsBytes,privateKey);
-
+                // TODO: CP2: Decrypt Session Key
+                sessionKey = ClientCP2.decryptSessionKey(encryptedKsBytes, privateKey);
+            }
 			byte[] decryptedFilename = null;
 			//while loop is to receive file in bytes 
 			while (!connectionSocket.isClosed()) {
