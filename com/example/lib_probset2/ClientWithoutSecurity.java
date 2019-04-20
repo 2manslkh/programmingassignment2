@@ -24,7 +24,7 @@ public class ClientWithoutSecurity {
 		PublicKey publicKey = null;
 		SecretKey sessionKey = null;
 
-    	String filename = "longtext.txt";
+    	String filename = "test50MB.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
