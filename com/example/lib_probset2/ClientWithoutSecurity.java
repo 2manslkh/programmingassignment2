@@ -27,7 +27,7 @@ public class ClientWithoutSecurity {
     	String filename = "longtext.txt";
     	if (args.length > 0) filename = args[0];
 
-    	String serverAddress = "10.12.154.107";
+    	String serverAddress = "localhost";
     	if (args.length > 1) filename = args[1];
 
     	int port = 4321;
@@ -80,8 +80,6 @@ public class ClientWithoutSecurity {
 			// Check if Nonce is Verifiable
 			if(!Auth.verifiedNonce(encryptedNonce,nonce,publicKey))
 				System.out.println("Nonce is not correct, Closing Connections");
-//				bufferedFileInputStream.close();
-//				fileInputStream.close();
 			else{
 				System.out.println("Client: Nonce Verified");
 			}
