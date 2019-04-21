@@ -113,7 +113,7 @@ public class ClientWithoutSecurity {
 			toServer.writeInt(encryptedFilename.length); // tells the server how many bytes we are sending
 			toServer.write(encryptedFilename);
 
-			System.out.println("Encrypted Filename sent:" + encryptedFilename.length + "bytes");
+//			System.out.println("Encrypted Filename sent:" + encryptedFilename.length + "bytes");
 
 
 			// Open the file
@@ -139,14 +139,14 @@ public class ClientWithoutSecurity {
 				if (!fileEnded) {
                     toServer.writeInt(1); // Tells the server that we are sending a file
                 }else{
-                    System.out.println("FILE ENDED");
+//                    System.out.println("FILE ENDED");
                     toServer.writeInt(2); // Tells the server that we sent the last chunk
                 }
 				int numBytesEncrypted = fromFileBufferEncrypted.length;
 				toServer.writeInt(numBytesEncrypted); // Tells the server how many bytes we are sending over
 				toServer.write(fromFileBufferEncrypted); // sends the chunk of data
                 toServer.flush();
-                System.out.println(bufferedFileInputStream.available());
+//                System.out.println(bufferedFileInputStream.available());
 			}
 			// DONT CLOSE CONNECTION YET
             boolean serverdone = false;

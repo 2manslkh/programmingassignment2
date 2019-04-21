@@ -13,7 +13,6 @@ import java.net.Socket;
 import java.security.PrivateKey;
 
 import javax.crypto.SecretKey;
-import javax.xml.bind.DatatypeConverter;
 
 public class ServerWithoutSecurity {
 
@@ -107,12 +106,12 @@ public class ServerWithoutSecurity {
 				} else if (packetType == 1 || packetType == 2) {
 
 					numBytes = fromClient.readInt();
-					System.out.println("CLIENT SENT:"+numBytes);
+//					System.out.println("CLIENT SENT:"+numBytes);
 					byte[] encryptedBlock = new byte[numBytes]; // encrypted block from client
 					byte[] decryptedBlock = null;
 					int decryptednumBytes = 0;
 					fromClient.readFully(encryptedBlock, 0, numBytes);
-					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
+//					System.out.println("received encryptedBlock: " + DatatypeConverter.printBase64Binary(encryptedBlock));
 
 					// CP1: Decrypt File Blocks using Private Key
 					if (CPMODE == 1) {
