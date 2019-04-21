@@ -18,13 +18,13 @@ public class ClientWithoutSecurity {
 
 	public static void main(String[] args) throws Exception {
 		// Client Certificate
-		int CPMODE = 2;
+		int CPMODE = 1;
 		InputStream clientCert = new FileInputStream("cacse.crt");
 		X509Certificate clientCertX509 = Auth.getX509Certificate(clientCert);
 		PublicKey publicKey = null;
 		SecretKey sessionKey = null;
 
-    	String filename = "test50MB.txt";
+    	String filename = "longtext.txt";
     	if (args.length > 0) filename = args[0];
 
     	String serverAddress = "localhost";
@@ -115,6 +115,7 @@ public class ClientWithoutSecurity {
 
 			System.out.println("Encrypted Filename sent:" + encryptedFilename.length + "bytes");
 
+
 			// Open the file
 			fileInputStream = new FileInputStream(filename);
 			bufferedFileInputStream = new BufferedInputStream(fileInputStream);
@@ -124,32 +125,41 @@ public class ClientWithoutSecurity {
 	        // Send the file
 	        for (boolean fileEnded = false; !fileEnded;) { // constantly sends chunks of 117 bytes
 				numBytes = bufferedFileInputStream.read(fromFileBuffer);
-				System.out.println("Block Contains: " + new String(fromFileBuffer));
+//				System.out.println("Block Contains: " + new String(fromFileBuffer));
 				fileEnded = numBytes < 117; // if the chunk is less than 117 bytes, it signifies the end of file (EOF)
 
 				if (CPMODE == 1) {
 					// CP1: Encrypt File Blocks using Public Key
 					fromFileBufferEncrypted = ClientCP1.encrypt(fromFileBuffer, publicKey);
 				}else if (CPMODE == 2) {
-					// TODO:CP2: Encrypt File Blocks using Session Key
+					// CP2: Encrypt File Blocks using Session Key
 					fromFileBufferEncrypted = ClientCP2.encrypt(fromFileBuffer, sessionKey);
 				}
 
-				if (!fileEnded) {  
-					toServer.writeInt(1); // Tells the server that we are sending a file
-				}else{
-					toServer.writeInt(2); // Tells the server that we sent the last chunk
-				}
+				if (!fileEnded) {
+                    toServer.writeInt(1); // Tells the server that we are sending a file
+                }else{
+                    System.out.println("FILE ENDED");
+                    toServer.writeInt(2); // Tells the server that we sent the last chunk
+                }
 				int numBytesEncrypted = fromFileBufferEncrypted.length;
 				toServer.writeInt(numBytesEncrypted); // Tells the server how many bytes we are sending over
-				toServer.write(fromFileBufferEncrypted); // sends the chunk of file
+				toServer.write(fromFileBufferEncrypted); // sends the chunk of data
+                toServer.flush();
+                System.out.println(bufferedFileInputStream.available());
 			}
-
-	        bufferedFileInputStream.close();
-	        fileInputStream.close();
-
-			System.out.println("Closing connection...");
-
+			// DONT CLOSE CONNECTION YET
+            boolean serverdone = false;
+            while(!serverdone){
+                try{
+                    serverdone = fromServer.readInt() == 3;
+                }catch (Exception e){
+                    serverdone = true;
+                    System.out.println("Closing connection...");
+                    bufferedFileInputStream.close();
+                    fileInputStream.close();
+                }
+            }
 		} catch (Exception e) {e.printStackTrace();}
 
 		long timeTaken = System.nanoTime() - timeStarted;

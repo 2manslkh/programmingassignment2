@@ -19,7 +19,7 @@ public class ServerWithoutSecurity {
 
 	public static void main(String[] args) throws Exception{
 
-		int CPMODE = 2;
+		int CPMODE = 1;
 		System.out.println("Started Server...");
 		String certname = "server.crt";
 		String privatekeyname = "privateServer.der";
@@ -94,7 +94,7 @@ public class ServerWithoutSecurity {
 						// CP1: Decrypt Filename using Private Key
 						decryptedFilename = ClientCP1.decrypt(filename, privateKey);
 					} else if (CPMODE == 2) {
-						// TODO:CP2: Decrypt Filename using Session Key
+						// CP2: Decrypt Filename using Session Key
 						decryptedFilename = ClientCP2.decrypt(filename, sessionKey);
 					}
 
@@ -117,18 +117,17 @@ public class ServerWithoutSecurity {
 					// CP1: Decrypt File Blocks using Private Key
 					if (CPMODE == 1) {
 						decryptedBlock = ClientCP1.decrypt(encryptedBlock, privateKey);
-						decryptednumBytes = decryptedBlock.length;
 					} else if (CPMODE == 2) {
 						// TODO:CP2: Decrypt File Blocks using Session Key
 						decryptedBlock = ClientCP2.decrypt(encryptedBlock, sessionKey);
-						decryptednumBytes = decryptedBlock.length;
 					}
 
+					decryptednumBytes = decryptedBlock.length;
 					bufferedFileOutputStream.write(decryptedBlock, 0, decryptednumBytes);
 
 					if (packetType ==  2) {
 						System.out.println("Closing connection...");
-
+						toClient.writeInt(3);
 						if (bufferedFileOutputStream != null) bufferedFileOutputStream.close();
 						if (bufferedFileOutputStream != null) fileOutputStream.close();
 						fromClient.close();
