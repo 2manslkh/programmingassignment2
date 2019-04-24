@@ -86,7 +86,6 @@ public class Auth {
         return ByteBuffer.wrap(inputDecrypted).getInt();
     }
 
-
     // Get Public Key from X509 Certificate
     public static PublicKey getPublicKey(String certname) throws FileNotFoundException, CertificateException {
         X509Certificate servercert = getX509Certificate(new FileInputStream(certname));
